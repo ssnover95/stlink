@@ -955,6 +955,7 @@ static stlink_t* stlink_open(const int verbose) {
             free(slsg);
         return NULL;
     }
+    memset(sl, 0, sizeof(stlink_t));
 
     if (libusb_init(&(slsg->libusb_ctx))) {
         WLOG("failed to init libusb context, wrong version of libraries?\n");
@@ -963,6 +964,9 @@ static stlink_t* stlink_open(const int verbose) {
         return NULL;
     }
 
+#if defined (__FreeBSD__)
+ #define LIBUSBX_API_VERSION LIBUSB_API_VERSION
+#endif 
 #if LIBUSBX_API_VERSION < 0x01000106
     libusb_set_debug(slsg->libusb_ctx, 3);
 #else

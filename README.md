@@ -3,10 +3,12 @@ Open source version of the STMicroelectronics Stlink Tools
 
 [![GitHub release](https://img.shields.io/github/release/texane/stlink.svg)](https://github.com/texane/stlink/releases/latest)
 [![BSD licensed](https://img.shields.io/badge/license-BSD-blue.svg)](https://raw.githubusercontent.com/hyperium/hyper/master/LICENSE)
-[![GitHub commits](https://img.shields.io/github/commits-since/texane/stlink/1.5.0.svg)](https://github.com/texane/stlink/compare/1.4.0...master)
+[![GitHub commits](https://img.shields.io/github/commits-since/texane/stlink/1.5.1.svg)](https://github.com/texane/stlink/compare/1.5.1...master)
 [![Downloads](https://img.shields.io/github/downloads/texane/stlink/total.svg)](https://github.com/texane/stlink/releases)
 [![Linux Status](https://img.shields.io/travis/texane/stlink/master.svg?label=linux)](https://travis-ci.org/texane/stlink)
 [![Build Status](https://jenkins.ncrmnt.org/buildStatus/icon?job=GithubCI/stlink)](https://jenkins.ncrmnt.org/job/GithubCI/job/stlink/)
+
+**NOTICE: The project has currently not an active maintainer. Feel free to contribute and discus in issue [#826](https://github.com/texane/stlink/issues/826)** 
 
 ## HOWTO
 
@@ -113,8 +115,15 @@ Kill the program being debugged? (y or n) y
 Starting program: /home/whitequark/ST/apps/bally/firmware.elf
 ```
 
-Remember that you can shorten the commands. `tar ext :4242' is good enough
+Remember that you can shorten the commands. `tar ext :4242` is good enough
 for GDB.
+
+If you need to send a hard reset signal through `NRST` pin, you can use the following command:
+
+```
+(gdb) monitor jtag_reset
+```
+
 
 ## Running programs from SRAM
 
@@ -138,6 +147,14 @@ If you would link your executable to `0x08000000` and then do
 ```
 
 then it would be written to the memory.
+
+## Writing Option Bytes
+
+Example to read and write option bytes (currently writing only supported for STM32G0)
+```
+./st-flash --debug --reset --format binary --flash=128k read option_bytes_dump.bin 0x1FFF7800 4
+./st-flash --debug --reset --format binary --flash=128k write option_bytes_dump.bin 0x1FFF7800
+```
 
 ## FAQ
 
