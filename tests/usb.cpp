@@ -9,7 +9,7 @@ int main(int ac, char** av)
     stlink_t* sl;
     struct stlink_reg regs;
 
-    sl = stlink_open_usb(10, 1, NULL);
+    sl = stlink_open_usb(static_cast<ugly_loglevel>(10), 1, NULL);
     if (sl != NULL) {
         printf("-- version\n");
         stlink_version(sl);

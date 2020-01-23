@@ -51,7 +51,7 @@ static const char* current_memory_map = NULL;
 typedef struct _st_state_t {
     // things from command line, bleh
     int stlink_version;
-    int logging_level;
+    ugly_loglevel logging_level;
     int listen_port;
     int persistent;
     int reset;
@@ -149,7 +149,7 @@ int parse_options(int argc, char** argv, st_state_t *st) {
                 break;
             case 'v':
                 if (optarg) {
-                    st->logging_level = atoi(optarg);
+                    st->logging_level = static_cast<ugly_loglevel >(atoi(optarg));
                 } else {
                     st->logging_level = DEFAULT_LOGGING_LEVEL;
                 }
@@ -519,7 +519,7 @@ static const char* const memory_map_template_F4_DE =
 char* make_memory_map(stlink_t *sl) {
     /* This will be freed in serve() */
     const size_t sz = 4096;
-    char* map = malloc(sz);
+    auto * map = new char[sz];
     map[0] = '\0';
 
     if(sl->chip_id==STLINK_CHIPID_STM32_F4 || sl->chip_id==STLINK_CHIPID_STM32_F446 || sl->chip_id==STLINK_CHIPID_STM32_F411RE) {
@@ -790,14 +790,14 @@ static int flash_add_block(stm32_addr_t addr, unsigned length, stlink_t *sl) {
         return -1;
     }
 
-    struct flash_block* new = malloc(sizeof(struct flash_block));
-    new->next = flash_root;
+    struct flash_block * new_block = new struct flash_block;
+    new_block->next = flash_root;
 
-    new->addr   = addr;
-    new->length = length;
-    new->data   = calloc(length, 1);
+    new_block->addr   = addr;
+    new_block->length = length;
+    new_block->data = new uint8_t[length]();
 
-    flash_root = new;
+    flash_root = new_block;
 
     return 0;
 }
@@ -1142,7 +1142,7 @@ int serve(stlink_t *sl, st_state_t *st) {
                 }
 
                 unsigned queryNameLength = (unsigned int) (separator - &packet[1]);
-                char* queryName = calloc(queryNameLength + 1, 1);
+                char * queryName = new char[queryNameLength + 1]();
                 strncpy(queryName, &packet[1], queryNameLength);
 
                 DLOG("query: %s;%s\n", queryName, params);
@@ -1189,7 +1189,7 @@ int serve(stlink_t *sl, st_state_t *st) {
                         if(length == 0) {
                             reply = strdup("l");
                         } else {
-                            reply = calloc(length + 2, 1);
+                            reply = new char[length + 2]();
                             reply[0] = 'm';
                             strncpy(&reply[1], data, length);
                         }
@@ -1207,7 +1207,7 @@ int serve(stlink_t *sl, st_state_t *st) {
                     size_t hex_len = strlen(params);
                     size_t alloc_size = (hex_len / 2) + 1;
                     size_t cmd_len;
-                    char *cmd = malloc(alloc_size);
+                    auto cmd = new char[alloc_size];
 
                     if (cmd == NULL) {
                         DLOG("Rcmd unhexify allocation error\n");
@@ -1321,7 +1321,7 @@ int serve(stlink_t *sl, st_state_t *st) {
                     // Length of decoded data cannot be more than
                     // encoded, as escapes are removed.
                     // Additional byte is reserved for alignment fix.
-                    uint8_t *decoded = calloc(data_length + 1, 1);
+                    auto decoded = new uint8_t[data_length + 1]();
                     unsigned dec_index = 0;
                     for(unsigned int i = 0; i < data_length; i++) {
                         if(data[i] == 0x7d) {
@@ -1458,7 +1458,7 @@ int serve(stlink_t *sl, st_state_t *st) {
             case 'g':
                 stlink_read_all_regs(sl, &regp);
 
-                reply = calloc(8 * 16 + 1, 1);
+                reply = new char[8 * 16 + 1]();
                 for(int i = 0; i < 16; i++)
                     sprintf(&reply[i * 8], "%08x", (uint32_t)htonl(regp.r[i]));
 
@@ -1502,7 +1502,7 @@ int serve(stlink_t *sl, st_state_t *st) {
                     reply = strdup("E00");
                 }
 
-                reply = calloc(8 + 1, 1);
+                reply = new char[8 + 1]();
                 sprintf(reply, "%08x", myreg);
 
                 break;
@@ -1578,7 +1578,7 @@ int serve(stlink_t *sl, st_state_t *st) {
                     count = 0;
                 }
 
-                reply = calloc(count * 2 + 1, 1);
+                reply = new char[count * 2 + 1]();
                 for(unsigned int i = 0; i < count; i++) {
                     reply[i * 2 + 0] = hex[sl->q_buf[i + adj_start] >> 4];
                     reply[i * 2 + 1] = hex[sl->q_buf[i + adj_start] & 0xf];

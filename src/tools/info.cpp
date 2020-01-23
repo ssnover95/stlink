@@ -81,7 +81,7 @@ static stlink_t *stlink_open_first(void)
     stlink_t* sl = NULL;
     sl = stlink_v1_open(0, 1);
     if (sl == NULL)
-        sl = stlink_open_usb(0, 1, NULL);
+        sl = stlink_open_usb(static_cast<ugly_loglevel>(0), 1, NULL);
 
     return sl;
 }

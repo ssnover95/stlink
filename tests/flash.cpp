@@ -93,11 +93,12 @@ static struct Test tests[] = {
     { "--debug --reset --format=binary write test.hex", -1, FLASH_OPTS_INITIALIZER },
     { "--debug --reset --format=ihex write test.hex 0x80000000", -1, FLASH_OPTS_INITIALIZER },
     { "--debug --reset write test.hex sometext", -1, FLASH_OPTS_INITIALIZER },
+
     { "--serial A1020304 erase", 0,
-        { .cmd = FLASH_CMD_ERASE, .devname = NULL, .serial = "\0\0\0\0\0\0\0\0\xA1\x02\x03\x04", .filename = NULL,
+        { .cmd = FLASH_CMD_ERASE, .devname = NULL, .serial = {0, 0, 0, 0, 0, 0, 0, 0, 0xA1, 0x02, 0x03, 0x04}, .filename = NULL,
           .addr = 0, .size = 0, .reset = 0, .log_level = STND_LOG_LEVEL, .format = FLASH_FORMAT_BINARY } },
     { "--serial=A1020304 erase", 0,
-        { .cmd = FLASH_CMD_ERASE, .devname = NULL, .serial = "\0\0\0\0\0\0\0\0\xA1\x02\x03\x04", .filename = NULL,
+        { .cmd = FLASH_CMD_ERASE, .devname = NULL, .serial = {0, 0, 0, 0, 0, 0, 0, 0, 0xA1, 0x02, 0x03, 0x04}, .filename = NULL,
           .addr = 0, .size = 0, .reset = 0, .log_level = STND_LOG_LEVEL, .format = FLASH_FORMAT_BINARY } },
 };
 

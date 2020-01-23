@@ -1,9 +1,9 @@
 set(STUTIL_SOURCE
-    gdb-remote.c
+    gdb-remote.cpp
     gdb-remote.h
-    gdb-server.c
+    gdb-server.cpp
     gdb-server.h
-    semihosting.c
+    semihosting.cpp
     semihosting.h)
 
 if (MSVC)

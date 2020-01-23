@@ -22,11 +22,34 @@
 
 enum SCSI_Generic_Direction {SG_DXFER_TO_DEV=0, SG_DXFER_FROM_DEV=0x80};
 
+namespace
+{
+void on_error(stlink_libusb *slu)
+{
+    if (slu->libusb_ctx)
+    {
+        libusb_exit(slu->libusb_ctx);
+    }
+}
+
+void on_malloc_error(_stlink *sl, stlink_libusb *slu)
+{
+    if (sl != nullptr)
+    {
+        free(sl);
+    }
+    if (slu != nullptr)
+    {
+        free(slu);
+    }
+}
+} // anonymous namespace
+
 void _stlink_usb_close(stlink_t* sl) {
     if (!sl)
         return;
 
-    struct stlink_libusb * const handle = sl->backend_data;
+    struct stlink_libusb * const handle = static_cast<stlink_libusb *>(sl->backend_data);
     // maybe we couldn't even get the usb device?
     if (handle != NULL) {
         if (handle->usb_handle != NULL) {
@@ -100,7 +123,7 @@ static inline int send_only
 
 static int fill_command
 (stlink_t * sl, enum SCSI_Generic_Direction dir, uint32_t len) {
-    struct stlink_libusb * const slu = sl->backend_data;
+    struct stlink_libusb * const slu = static_cast<stlink_libusb *>(sl->backend_data);
     unsigned char* const cmd = sl->c_buf;
     int i = 0;
     memset(cmd, 0, sizeof (sl->c_buf));
@@ -120,7 +143,7 @@ static int fill_command
 }
 
 int _stlink_usb_version(stlink_t *sl) {
-    struct stlink_libusb * const slu = sl->backend_data;
+    struct stlink_libusb * const slu = static_cast<stlink_libusb *>(sl->backend_data);
     unsigned char* const data = sl->q_buf;
     unsigned char* const cmd  = sl->c_buf;
     ssize_t size;
@@ -139,7 +162,7 @@ int _stlink_usb_version(stlink_t *sl) {
 }
 
 int32_t _stlink_usb_target_voltage(stlink_t *sl) {
-    struct stlink_libusb * const slu = sl->backend_data;
+    struct stlink_libusb * const slu = static_cast<stlink_libusb *>(sl->backend_data);
     unsigned char* const rdata = sl->q_buf;
     unsigned char* const cmd  = sl->c_buf;
     ssize_t size;
@@ -167,7 +190,7 @@ int32_t _stlink_usb_target_voltage(stlink_t *sl) {
 }
 
 int _stlink_usb_read_debug32(stlink_t *sl, uint32_t addr, uint32_t *data) {
-    struct stlink_libusb * const slu = sl->backend_data;
+    struct stlink_libusb * const slu = static_cast<stlink_libusb *>(sl->backend_data);
     unsigned char* const rdata = sl->q_buf;
     unsigned char* const cmd  = sl->c_buf;
     ssize_t size;
@@ -187,7 +210,7 @@ int _stlink_usb_read_debug32(stlink_t *sl, uint32_t addr, uint32_t *data) {
 }
 
 int _stlink_usb_write_debug32(stlink_t *sl, uint32_t addr, uint32_t data) {
-    struct stlink_libusb * const slu = sl->backend_data;
+    struct stlink_libusb * const slu = static_cast<stlink_libusb *>(sl->backend_data);
     unsigned char* const rdata = sl->q_buf;
     unsigned char* const cmd  = sl->c_buf;
     ssize_t size;
@@ -208,7 +231,7 @@ int _stlink_usb_write_debug32(stlink_t *sl, uint32_t addr, uint32_t data) {
 }
 
 int _stlink_usb_write_mem32(stlink_t *sl, uint32_t addr, uint16_t len) {
-    struct stlink_libusb * const slu = sl->backend_data;
+    struct stlink_libusb * const slu = static_cast<stlink_libusb *>(sl->backend_data);
     unsigned char* const data = sl->q_buf;
     unsigned char* const cmd  = sl->c_buf;
     int i, ret;
@@ -230,7 +253,7 @@ int _stlink_usb_write_mem32(stlink_t *sl, uint32_t addr, uint16_t len) {
 }
 
 int _stlink_usb_write_mem8(stlink_t *sl, uint32_t addr, uint16_t len) {
-    struct stlink_libusb * const slu = sl->backend_data;
+    struct stlink_libusb * const slu = static_cast<stlink_libusb *>(sl->backend_data);
     unsigned char* const data = sl->q_buf;
     unsigned char* const cmd  = sl->c_buf;
     int i, ret;
@@ -253,7 +276,7 @@ int _stlink_usb_write_mem8(stlink_t *sl, uint32_t addr, uint16_t len) {
 
 
 int _stlink_usb_current_mode(stlink_t * sl) {
-    struct stlink_libusb * const slu = sl->backend_data;
+    struct stlink_libusb * const slu = static_cast<stlink_libusb *>(sl->backend_data);
     unsigned char* const cmd  = sl->c_buf;
     unsigned char* const data = sl->q_buf;
     ssize_t size;
@@ -270,7 +293,7 @@ int _stlink_usb_current_mode(stlink_t * sl) {
 }
 
 int _stlink_usb_core_id(stlink_t * sl) {
-    struct stlink_libusb * const slu = sl->backend_data;
+    struct stlink_libusb * const slu = static_cast<stlink_libusb *>(sl->backend_data);
     unsigned char* const cmd  = sl->c_buf;
     unsigned char* const data = sl->q_buf;
     ssize_t size;
@@ -291,7 +314,7 @@ int _stlink_usb_core_id(stlink_t * sl) {
 }
 
 int _stlink_usb_status(stlink_t * sl) {
-    struct stlink_libusb * const slu = sl->backend_data;
+    struct stlink_libusb * const slu = static_cast<stlink_libusb *>(sl->backend_data);
     unsigned char* const data = sl->q_buf;
     unsigned char* const cmd  = sl->c_buf;
     ssize_t size;
@@ -312,7 +335,7 @@ int _stlink_usb_status(stlink_t * sl) {
 }
 
 int _stlink_usb_force_debug(stlink_t *sl) {
-    struct stlink_libusb *slu = sl->backend_data;
+    struct stlink_libusb *slu = static_cast<stlink_libusb *>(sl->backend_data);
     unsigned char* const data = sl->q_buf;
     unsigned char* const cmd  = sl->c_buf;
     ssize_t size;
@@ -331,7 +354,7 @@ int _stlink_usb_force_debug(stlink_t *sl) {
 }
 
 int _stlink_usb_enter_swd_mode(stlink_t * sl) {
-    struct stlink_libusb * const slu = sl->backend_data;
+    struct stlink_libusb * const slu = static_cast<stlink_libusb *>(sl->backend_data);
     unsigned char* const cmd  = sl->c_buf;
     ssize_t size;
     const int rep_len = 0;
@@ -351,7 +374,7 @@ int _stlink_usb_enter_swd_mode(stlink_t * sl) {
 }
 
 int _stlink_usb_exit_dfu_mode(stlink_t* sl) {
-    struct stlink_libusb * const slu = sl->backend_data;
+    struct stlink_libusb * const slu = static_cast<stlink_libusb *>(sl->backend_data);
     unsigned char* const cmd = sl->c_buf;
     ssize_t size;
     int i = fill_command(sl, SG_DXFER_FROM_DEV, 0);
@@ -370,7 +393,7 @@ int _stlink_usb_exit_dfu_mode(stlink_t* sl) {
 
 
 int _stlink_usb_reset(stlink_t * sl) {
-    struct stlink_libusb * const slu = sl->backend_data;
+    struct stlink_libusb * const slu = static_cast<stlink_libusb *>(sl->backend_data);
     unsigned char* const data = sl->q_buf;
     unsigned char* const cmd = sl->c_buf;
     ssize_t size;
@@ -393,7 +416,7 @@ int _stlink_usb_reset(stlink_t * sl) {
 
 
 int _stlink_usb_jtag_reset(stlink_t * sl, int value) {
-    struct stlink_libusb * const slu = sl->backend_data;
+    struct stlink_libusb * const slu = static_cast<stlink_libusb *>(sl->backend_data);
     unsigned char* const data = sl->q_buf;
     unsigned char* const cmd = sl->c_buf;
     ssize_t size;
@@ -415,7 +438,7 @@ int _stlink_usb_jtag_reset(stlink_t * sl, int value) {
 
 
 int _stlink_usb_step(stlink_t* sl) {
-    struct stlink_libusb * const slu = sl->backend_data;
+    struct stlink_libusb * const slu = static_cast<stlink_libusb *>(sl->backend_data);
     unsigned char* const data = sl->q_buf;
     unsigned char* const cmd = sl->c_buf;
     ssize_t size;
@@ -439,7 +462,7 @@ int _stlink_usb_step(stlink_t* sl) {
  * @param sl
  */
 int _stlink_usb_run(stlink_t* sl) {
-    struct stlink_libusb * const slu = sl->backend_data;
+    struct stlink_libusb * const slu = static_cast<stlink_libusb *>(sl->backend_data);
     unsigned char* const data = sl->q_buf;
     unsigned char* const cmd = sl->c_buf;
     ssize_t size;
@@ -460,7 +483,7 @@ int _stlink_usb_run(stlink_t* sl) {
 
 
 int _stlink_usb_set_swdclk(stlink_t* sl, uint16_t clk_divisor) {
-    struct stlink_libusb * const slu = sl->backend_data;
+    struct stlink_libusb * const slu = static_cast<stlink_libusb *>(sl->backend_data);
     unsigned char* const data = sl->q_buf;
     unsigned char* const cmd = sl->c_buf;
     ssize_t size;
@@ -489,7 +512,7 @@ int _stlink_usb_set_swdclk(stlink_t* sl, uint16_t clk_divisor) {
 }
 
 int _stlink_usb_exit_debug_mode(stlink_t *sl) {
-    struct stlink_libusb * const slu = sl->backend_data;
+    struct stlink_libusb * const slu = static_cast<stlink_libusb *>(sl->backend_data);
     unsigned char* const cmd = sl->c_buf;
     ssize_t size;
     int i = fill_command(sl, SG_DXFER_FROM_DEV, 0);
@@ -507,7 +530,7 @@ int _stlink_usb_exit_debug_mode(stlink_t *sl) {
 }
 
 int _stlink_usb_read_mem32(stlink_t *sl, uint32_t addr, uint16_t len) {
-    struct stlink_libusb * const slu = sl->backend_data;
+    struct stlink_libusb * const slu = static_cast<stlink_libusb *>(sl->backend_data);
     unsigned char* const data = sl->q_buf;
     unsigned char* const cmd = sl->c_buf;
     ssize_t size;
@@ -531,7 +554,7 @@ int _stlink_usb_read_mem32(stlink_t *sl, uint32_t addr, uint16_t len) {
 }
 
 int _stlink_usb_read_all_regs(stlink_t *sl, struct stlink_reg *regp) {
-    struct stlink_libusb * const slu = sl->backend_data;
+    struct stlink_libusb * const slu = static_cast<stlink_libusb *>(sl->backend_data);
     unsigned char* const cmd = sl->c_buf;
     unsigned char* const data = sl->q_buf;
     ssize_t size;
@@ -567,7 +590,7 @@ int _stlink_usb_read_all_regs(stlink_t *sl, struct stlink_reg *regp) {
 }
 
 int _stlink_usb_read_reg(stlink_t *sl, int r_idx, struct stlink_reg *regp) {
-    struct stlink_libusb * const slu = sl->backend_data;
+    struct stlink_libusb * const slu = static_cast<stlink_libusb *>(sl->backend_data);
     unsigned char* const data = sl->q_buf;
     unsigned char* const cmd  = sl->c_buf;
     ssize_t size;
@@ -715,7 +738,7 @@ int _stlink_usb_write_unsupported_reg(stlink_t *sl, uint32_t val, int r_idx, str
 }
 
 int _stlink_usb_write_reg(stlink_t *sl, uint32_t reg, int idx) {
-    struct stlink_libusb * const slu = sl->backend_data;
+    struct stlink_libusb * const slu = static_cast<stlink_libusb *>(sl->backend_data);
     unsigned char* const data = sl->q_buf;
     unsigned char* const cmd  = sl->c_buf;
     ssize_t size;
@@ -774,12 +797,18 @@ stlink_t *stlink_open_usb(enum ugly_loglevel verbose, bool reset, char serial[16
     int ret = -1;
     int config;
 
-    sl = calloc(1, sizeof (stlink_t));
-    slu = calloc(1, sizeof (struct stlink_libusb));
-    if (sl == NULL)
-        goto on_malloc_error;
-    if (slu == NULL)
-        goto on_malloc_error;
+    sl = static_cast<stlink_t *>(calloc(1, sizeof (stlink_t)));
+    slu = static_cast<stlink_libusb *>(calloc(1, sizeof (struct stlink_libusb)));
+    if (sl == nullptr)
+    {
+        on_malloc_error(sl, slu);
+        return nullptr;
+    }
+    if (slu == nullptr)
+    {
+        on_malloc_error(sl, slu);
+        return nullptr;
+    }
 
     ugly_init(verbose);
     sl->backend = &_stlink_usb_backend;
@@ -788,7 +817,8 @@ stlink_t *stlink_open_usb(enum ugly_loglevel verbose, bool reset, char serial[16
     sl->core_stat = STLINK_CORE_STAT_UNKNOWN;
     if (libusb_init(&(slu->libusb_ctx))) {
         WLOG("failed to init libusb context, wrong version of libraries?\n");
-        goto on_error;
+        on_error(slu);
+        return nullptr;
     }
 
     libusb_device **list;
@@ -807,7 +837,8 @@ stlink_t *stlink_open_usb(enum ugly_loglevel verbose, bool reset, char serial[16
         char *c = strchr(device,':');
         if (c==NULL) {
             WLOG("STLINK_DEVICE must be <USB_BUS>:<USB_ADDR> format\n");
-            goto on_error;
+            on_error(slu);
+            return nullptr;
         }
         devBus=atoi(device);
         *c++=0;
@@ -858,14 +889,16 @@ stlink_t *stlink_open_usb(enum ugly_loglevel verbose, bool reset, char serial[16
 
     if (cnt < 0) {
         WLOG ("Couldn't find %s ST-Link/V2 devices\n",(devBus && devAddr)?"matched":"any");
-        goto on_error;
+        on_error(slu);
+        return nullptr;
     } else {
         ret = libusb_open(list[cnt], &slu->usb_handle);
         if (ret != 0) {
             WLOG("Error %d (%s) opening ST-Link/V2 device %03d:%03d\n",
                  ret, strerror (errno), libusb_get_bus_number(list[cnt]), libusb_get_device_address(list[cnt]));
             libusb_free_device_list(list, 1);
-            goto on_error;
+            on_error(slu);
+            return nullptr;
         }
     }
 
@@ -941,18 +974,6 @@ on_libusb_error:
     }
 
     return sl;
-
-on_error:
-    if (slu->libusb_ctx)
-        libusb_exit(slu->libusb_ctx);
-
-on_malloc_error:
-    if (sl != NULL)
-        free(sl);
-    if (slu != NULL)
-        free(slu);
-
-    return NULL;
 }
 
 static size_t stlink_probe_usb_devs(libusb_device **devs, stlink_t **sldevs[]) {
@@ -980,7 +1001,7 @@ static size_t stlink_probe_usb_devs(libusb_device **devs, stlink_t **sldevs[]) {
     }
 
     /* Allocate list of pointers */
-    _sldevs = calloc(slcnt, sizeof(stlink_t *));
+    _sldevs = static_cast<stlink_t **>(calloc(slcnt, sizeof(stlink_t *)));
     if (!_sldevs) {
         *sldevs = NULL;
         return 0;
@@ -1017,7 +1038,7 @@ static size_t stlink_probe_usb_devs(libusb_device **devs, stlink_t **sldevs[]) {
         libusb_close(handle);
 
         stlink_t *sl = NULL;
-        sl = stlink_open_usb(0, 1, serial);
+        sl = stlink_open_usb(static_cast<ugly_loglevel >(0), true, serial);
         if (!sl)
             continue;
 

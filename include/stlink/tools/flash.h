@@ -11,7 +11,7 @@ enum flash_cmd {FLASH_CMD_NONE = 0, FLASH_CMD_WRITE = 1, FLASH_CMD_READ = 2, FLA
 enum flash_format {FLASH_FORMAT_BINARY = 0, FLASH_FORMAT_IHEX = 1};
 struct flash_opts
 {
-    enum flash_cmd cmd;
+    int cmd;
     const char* devname;
     uint8_t serial[16];
     const char* filename;
@@ -19,7 +19,7 @@ struct flash_opts
     size_t size;
     int reset;
     int log_level;
-    enum flash_format format;
+    int format;
     size_t flash_size;	/* --flash=n[k][m] */
 };
 

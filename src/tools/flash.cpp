@@ -27,7 +27,7 @@ static void cleanup(int signum) {
     exit(1);
 }
 
-static void usage(void)
+static void usage()
 {
     puts("stlinkv1 command line: ./st-flash [--debug] [--reset] [--format <format>] [--flash=<fsize>] {read|write} /dev/sgX <path> <addr> <size>");
     puts("stlinkv1 command line: ./st-flash [--debug] /dev/sgX erase");
@@ -60,7 +60,7 @@ int main(int ac, char** av)
     if (o.devname != NULL) /* stlinkv1 */
         sl = stlink_v1_open(o.log_level, 1);
     else /* stlinkv2 */
-        sl = stlink_open_usb(o.log_level, 1, (char *)o.serial);
+        sl = stlink_open_usb(static_cast<ugly_loglevel>(o.log_level), 1, (char *)o.serial);
 
     if (sl == NULL)
         return -1;

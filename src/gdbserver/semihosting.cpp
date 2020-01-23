@@ -194,7 +194,7 @@ int do_semihosting (stlink_t *sl, uint32_t r0, uint32_t r1, uint32_t *ret) {
             *ret = -1;
             return -1;
         }
-        name = malloc(name_len);
+        name = new char[name_len];
 
         if (name == NULL) {
             DLOG("Semihosting SYS_OPEN error: cannot allocate name buffer\n");
@@ -392,7 +392,7 @@ int do_semihosting (stlink_t *sl, uint32_t r0, uint32_t r1, uint32_t *ret) {
             *ret = -1;
             return -1;
         }
-        name = malloc(name_len);
+        name = new char[name_len];
 
         if (name == NULL) {
             DLOG("Semihosting SYS_REMOVE error: cannot allocate name buffer\n");

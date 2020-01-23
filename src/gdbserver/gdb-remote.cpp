@@ -20,7 +20,7 @@ static const char hex[] = "0123456789abcdef";
 int gdb_send_packet(int fd, char* data) {
     unsigned int data_length = (unsigned int) strlen(data);
     int length = data_length + 4;
-    char* packet = malloc(length); /* '$' data (hex) '#' cksum (hex) */
+    auto packet = new char[length]; /* '$' data (hex) '#' cksum (hex) */
 
     memset(packet, 0, length);
 
@@ -61,7 +61,7 @@ int gdb_recv_packet(int fd, char** buffer) {
     unsigned packet_size = ALLOC_STEP + 1, packet_idx = 0;
     uint8_t cksum = 0;
     char recv_cksum[3] = {0};
-    char* packet_buffer = malloc(packet_size);
+    auto packet_buffer = new char[packet_size];
     unsigned state;
 
 start:
@@ -98,7 +98,7 @@ start:
 
                 if(packet_idx == packet_size) {
                     packet_size += ALLOC_STEP;
-                    packet_buffer = realloc(packet_buffer, packet_size);
+                    packet_buffer = static_cast<char *>(realloc(packet_buffer, packet_size));
                 }
             }
             break;

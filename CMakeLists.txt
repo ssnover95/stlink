@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.8.7)
 set(CMAKE_USER_MAKE_RULES_OVERRIDE cmake/c_flag_overrides.cmake)
-project(stlink C)
+project(stlink C CXX)
 set(PROJECT_DESCRIPTION "Open source version of the STMicroelectronics Stlink Tools")
 set(STLINK_UDEV_RULES_DIR "/etc/udev/rules.d" CACHE PATH "Udev rules directory")
 set(STLINK_MODPROBED_DIR "/etc/modprobe.d" CACHE PATH "modprobe.d directory")
@@ -74,16 +74,16 @@ set(STLINK_HEADERS
 )
 
 set(STLINK_SOURCE
-	src/chipid.c
-	src/common.c
-	src/usb.c
-	src/sg.c
-	src/logging.c
-	src/flash_loader.c
+	src/chipid.cpp
+	src/common.cpp
+	src/usb.cpp
+	src/sg.cpp
+	src/logging.cpp
+	src/flash_loader.cpp
 )
 
 if (WIN32 OR MSYS OR MINGW)
-	set (STLINK_SOURCE "${STLINK_SOURCE};src/mmap.c;src/mingw/mingw.c")
+	set (STLINK_SOURCE "${STLINK_SOURCE};src/mmap.c;src/mingw/mingw.cpp")
 endif ()
 
 include_directories(${LIBUSB_INCLUDE_DIR})
@@ -177,14 +177,14 @@ endif()
 ###
 # Tools
 ###
-add_executable(st-flash src/tools/flash.c src/tools/flash_opts.c)
+add_executable(st-flash src/tools/flash.cpp src/tools/flash_opts.cpp)
 if (WIN32 OR APPLE)
 	target_link_libraries(st-flash ${STLINK_LIB_STATIC})
 else()
 	target_link_libraries(st-flash ${STLINK_LIB_SHARED})
 endif()
 
-add_executable(st-info src/tools/info.c)
+add_executable(st-info src/tools/info.cpp)
 if (WIN32 OR APPLE)
 	target_link_libraries(st-info ${STLINK_LIB_STATIC})
 else()

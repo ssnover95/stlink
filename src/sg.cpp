@@ -102,7 +102,7 @@ static void clear_cdb(struct stlink_libsg *sl) {
  */
 void _stlink_sg_close(stlink_t *sl) {
     if (sl) {
-        struct stlink_libsg *slsg = sl->backend_data;
+        struct stlink_libsg *slsg = static_cast<stlink_libsg *>(sl->backend_data);
         libusb_close(slsg->usb_handle);
         libusb_exit(slsg->libusb_ctx);
         free(slsg);
@@ -115,15 +115,15 @@ static int get_usb_mass_storage_status(libusb_device_handle *handle, uint8_t end
     memset(csw, 0, sizeof(csw));
     int transferred;
     int ret;
-    int try = 0;
+    int attempt = 0;
     do {
         ret = libusb_bulk_transfer(handle, endpoint, (unsigned char *)&csw, sizeof(csw),
                 &transferred, SG_TIMEOUT_MSEC);
         if (ret == LIBUSB_ERROR_PIPE) {
             libusb_clear_halt(handle, endpoint);
         }
-        try++;
-    } while ((ret == LIBUSB_ERROR_PIPE) && (try < 3));
+        attempt++;
+    } while ((ret == LIBUSB_ERROR_PIPE) && (attempt < 3));
     if (ret != LIBUSB_SUCCESS) {
         WLOG("%s: receiving failed: %d\n", __func__, ret);
         return -1;
@@ -180,7 +180,7 @@ int send_usb_mass_storage_command(libusb_device_handle *handle, uint8_t endpoint
         tag = 1;
     }
 
-    int try = 0;
+    int attempt = 0;
     int ret = 0;
     int real_transferred;
     int i = 0;
@@ -213,8 +213,8 @@ int send_usb_mass_storage_command(libusb_device_handle *handle, uint8_t endpoint
         if (ret == LIBUSB_ERROR_PIPE) {
             libusb_clear_halt(handle, endpoint_out);
         }
-        try++;
-    } while ((ret == LIBUSB_ERROR_PIPE) && (try < 3));
+        attempt++;
+    } while ((ret == LIBUSB_ERROR_PIPE) && (attempt < 3));
     if (ret != LIBUSB_SUCCESS) {
         WLOG("sending failed: %d\n", ret);
         return -1;
@@ -248,15 +248,15 @@ get_sense(libusb_device_handle *handle, uint8_t endpoint_in, uint8_t endpoint_ou
     unsigned char sense[REQUEST_SENSE_LENGTH];
     int transferred;
     int ret;
-    int try = 0;
+    int attempt = 0;
     do {
         ret = libusb_bulk_transfer(handle, endpoint_in, sense, sizeof(sense),
                 &transferred, SG_TIMEOUT_MSEC);
         if (ret == LIBUSB_ERROR_PIPE) {
             libusb_clear_halt(handle, endpoint_in);
         }
-        try++;
-    } while ((ret == LIBUSB_ERROR_PIPE) && (try < 3));
+        attempt++;
+    } while ((ret == LIBUSB_ERROR_PIPE) && (attempt < 3));
     if (ret != LIBUSB_SUCCESS) {
         WLOG("receiving sense failed: %d\n", ret);
         return;
@@ -291,15 +291,15 @@ int send_usb_data_only(libusb_device_handle *handle, unsigned char endpoint_out,
         unsigned char endpoint_in, unsigned char *cbuf, unsigned int length) {
     int ret;
     int real_transferred;
-    int try = 0;
+    int attempt = 0;
     do {
         ret = libusb_bulk_transfer(handle, endpoint_out, cbuf, length,
                 &real_transferred, SG_TIMEOUT_MSEC);
         if (ret == LIBUSB_ERROR_PIPE) {
             libusb_clear_halt(handle, endpoint_out);
         }
-        try++;
-    } while ((ret == LIBUSB_ERROR_PIPE) && (try < 3));
+        attempt++;
+    } while ((ret == LIBUSB_ERROR_PIPE) && (attempt < 3));
     if (ret != LIBUSB_SUCCESS) {
         WLOG("sending failed: %d\n", ret);
         return -1;
@@ -326,7 +326,7 @@ int send_usb_data_only(libusb_device_handle *handle, unsigned char endpoint_out,
 
 
 int stlink_q(stlink_t *sl) {
-    struct stlink_libsg* sg = sl->backend_data;
+    struct stlink_libsg* sg = static_cast<stlink_libsg *>(sl->backend_data);
     //uint8_t cdb_len = 6;  // FIXME varies!!!
     uint8_t cdb_len = 10;  // FIXME varies!!!
     uint8_t lun = 0;  // always zero...
@@ -337,7 +337,7 @@ int stlink_q(stlink_t *sl) {
     // now wait for our response...
     // length copied from stlink-usb...
     int rx_length = sl->q_len;
-    int try = 0;
+    int attempt = 0;
     int real_transferred;
     int ret;
     if (rx_length > 0) {
@@ -347,8 +347,8 @@ int stlink_q(stlink_t *sl) {
             if (ret == LIBUSB_ERROR_PIPE) {
                 libusb_clear_halt(sg->usb_handle, sg->ep_req);
             }
-            try++;
-        } while ((ret == LIBUSB_ERROR_PIPE) && (try < 3));
+            attempt++;
+        } while ((ret == LIBUSB_ERROR_PIPE) && (attempt < 3));
 
         if (ret != LIBUSB_SUCCESS) {
             WLOG("Receiving failed: %d\n", ret);
@@ -406,7 +406,7 @@ void stlink_stat(stlink_t *stl, char *txt) {
 
 
 int _stlink_sg_version(stlink_t *stl) {
-    struct stlink_libsg *sl = stl->backend_data;
+    struct stlink_libsg *sl = static_cast<stlink_libsg *>(stl->backend_data);
     clear_cdb(sl);
     sl->cdb_cmd_blk[0] = STLINK_GET_VERSION;
     stl->q_len = 6;
@@ -419,7 +419,7 @@ int _stlink_sg_version(stlink_t *stl) {
 // usb dfu             || usb mass             || jtag or swd
 
 int _stlink_sg_current_mode(stlink_t *stl) {
-    struct stlink_libsg *sl = stl->backend_data;
+    struct stlink_libsg *sl = static_cast<stlink_libsg *>(stl->backend_data);
     clear_cdb(sl);
     sl->cdb_cmd_blk[0] = STLINK_GET_CURRENT_MODE;
     stl->q_len = 2;
@@ -433,7 +433,7 @@ int _stlink_sg_current_mode(stlink_t *stl) {
 // Exit the mass mode and enter the swd debug mode.
 
 int _stlink_sg_enter_swd_mode(stlink_t *sl) {
-    struct stlink_libsg *sg = sl->backend_data;
+    struct stlink_libsg *sg = static_cast<stlink_libsg *>(sl->backend_data);
     clear_cdb(sg);
     sg->cdb_cmd_blk[1] = STLINK_DEBUG_ENTER;
     sg->cdb_cmd_blk[2] = STLINK_DEBUG_ENTER_SWD;
@@ -445,7 +445,7 @@ int _stlink_sg_enter_swd_mode(stlink_t *sl) {
 // (jtag is disabled in the discovery's stlink firmware)
 
 int _stlink_sg_enter_jtag_mode(stlink_t *sl) {
-    struct stlink_libsg *sg = sl->backend_data;
+    struct stlink_libsg *sg = static_cast<stlink_libsg *>(sl->backend_data);
     DLOG("\n*** stlink_enter_jtag_mode ***\n");
     clear_cdb(sg);
     sg->cdb_cmd_blk[1] = STLINK_DEBUG_ENTER;
@@ -457,7 +457,7 @@ int _stlink_sg_enter_jtag_mode(stlink_t *sl) {
 // XXX kernel driver performs reset, the device temporally disappears
 // Suspect this is no longer the case when we have ignore on? RECHECK
 int _stlink_sg_exit_dfu_mode(stlink_t *sl) {
-    struct stlink_libsg *sg = sl->backend_data;
+    struct stlink_libsg *sg = static_cast<stlink_libsg *>(sl->backend_data);
     DLOG("\n*** stlink_exit_dfu_mode ***\n");
     clear_cdb(sg);
     sg->cdb_cmd_blk[0] = STLINK_DFU_COMMAND;
@@ -510,7 +510,7 @@ int _stlink_sg_exit_dfu_mode(stlink_t *sl) {
 }
 
 int _stlink_sg_core_id(stlink_t *sl) {
-    struct stlink_libsg *sg = sl->backend_data;
+    struct stlink_libsg *sg = static_cast<stlink_libsg *>(sl->backend_data);
     int ret;
     clear_cdb(sg);
     sg->cdb_cmd_blk[1] = STLINK_DEBUG_READCOREID;
@@ -527,7 +527,7 @@ int _stlink_sg_core_id(stlink_t *sl) {
 // Arm-core reset -> halted state.
 
 int _stlink_sg_reset(stlink_t *sl) {
-    struct stlink_libsg *sg = sl->backend_data;
+    struct stlink_libsg *sg = static_cast<stlink_libsg *>(sl->backend_data);
     clear_cdb(sg);
     sg->cdb_cmd_blk[1] = STLINK_DEBUG_RESETSYS;
     sl->q_len = 2;
@@ -547,7 +547,7 @@ int _stlink_sg_reset(stlink_t *sl) {
 // Arm-core reset -> halted state.
 
 int _stlink_sg_jtag_reset(stlink_t *sl, int value) {
-    struct stlink_libsg *sg = sl->backend_data;
+    struct stlink_libsg *sg = static_cast<stlink_libsg *>(sl->backend_data);
     clear_cdb(sg);
     sg->cdb_cmd_blk[1] = STLINK_JTAG_DRIVE_NRST;
     sg->cdb_cmd_blk[2] = (value)?0:1;
@@ -564,7 +564,7 @@ int _stlink_sg_jtag_reset(stlink_t *sl, int value) {
 // Arm-core status: halted or running.
 
 int _stlink_sg_status(stlink_t *sl) {
-    struct stlink_libsg *sg = sl->backend_data;
+    struct stlink_libsg *sg = static_cast<stlink_libsg *>(sl->backend_data);
     clear_cdb(sg);
     sg->cdb_cmd_blk[1] = STLINK_DEBUG_GETSTATUS;
     sl->q_len = 2;
@@ -575,7 +575,7 @@ int _stlink_sg_status(stlink_t *sl) {
 // Force the core into the debug mode -> halted state.
 
 int _stlink_sg_force_debug(stlink_t *sl) {
-    struct stlink_libsg *sg = sl->backend_data;
+    struct stlink_libsg *sg = static_cast<stlink_libsg *>(sl->backend_data);
     clear_cdb(sg);
     sg->cdb_cmd_blk[1] = STLINK_DEBUG_FORCEDEBUG;
     sl->q_len = 2;
@@ -590,7 +590,7 @@ int _stlink_sg_force_debug(stlink_t *sl) {
 // Read all arm-core registers.
 
 int _stlink_sg_read_all_regs(stlink_t *sl, struct stlink_reg *regp) {
-    struct stlink_libsg *sg = sl->backend_data;
+    struct stlink_libsg *sg = static_cast<stlink_libsg *>(sl->backend_data);
 
     clear_cdb(sg);
     sg->cdb_cmd_blk[1] = STLINK_DEBUG_READALLREGS;
@@ -632,7 +632,7 @@ int _stlink_sg_read_all_regs(stlink_t *sl, struct stlink_reg *regp) {
 // r0  | r1  | ... | r15   | xpsr  | main_sp | process_sp | rw    | rw2
 
 int _stlink_sg_read_reg(stlink_t *sl, int r_idx, struct stlink_reg *regp) {
-    struct stlink_libsg *sg = sl->backend_data;
+    struct stlink_libsg *sg = static_cast<stlink_libsg *>(sl->backend_data);
     clear_cdb(sg);
     sg->cdb_cmd_blk[1] = STLINK_DEBUG_READREG;
     sg->cdb_cmd_blk[2] = r_idx;
@@ -677,7 +677,7 @@ int _stlink_sg_read_reg(stlink_t *sl, int r_idx, struct stlink_reg *regp) {
 // r0  | r1  | ... | r15   | xpsr  | main_sp | process_sp | rw    | rw2
 
 int _stlink_sg_write_reg(stlink_t *sl, uint32_t reg, int idx) {
-    struct stlink_libsg *sg = sl->backend_data;
+    struct stlink_libsg *sg = static_cast<stlink_libsg *>(sl->backend_data);
     clear_cdb(sg);
     sg->cdb_cmd_blk[1] = STLINK_DEBUG_WRITEREG;
     //   2: reg index
@@ -698,7 +698,7 @@ int _stlink_sg_write_reg(stlink_t *sl, uint32_t reg, int idx) {
 // TODO test
 
 void stlink_write_dreg(stlink_t *sl, uint32_t reg, uint32_t addr) {
-    struct stlink_libsg *sg = sl->backend_data;
+    struct stlink_libsg *sg = static_cast<stlink_libsg *>(sl->backend_data);
     DLOG("\n*** stlink_write_dreg ***\n");
     clear_cdb(sg);
     sg->cdb_cmd_blk[1] = STLINK_DEBUG_WRITEDEBUGREG;
@@ -715,7 +715,7 @@ void stlink_write_dreg(stlink_t *sl, uint32_t reg, uint32_t addr) {
 // Force the core exit the debug mode.
 
 int _stlink_sg_run(stlink_t *sl) {
-    struct stlink_libsg *sg = sl->backend_data;
+    struct stlink_libsg *sg = static_cast<stlink_libsg *>(sl->backend_data);
     clear_cdb(sg);
     sg->cdb_cmd_blk[1] = STLINK_DEBUG_RUNCORE;
     sl->q_len = 2;
@@ -731,7 +731,7 @@ int _stlink_sg_run(stlink_t *sl) {
 // Step the arm-core.
 
 int _stlink_sg_step(stlink_t *sl) {
-    struct stlink_libsg *sg = sl->backend_data;
+    struct stlink_libsg *sg = static_cast<stlink_libsg *>(sl->backend_data);
     clear_cdb(sg);
     sg->cdb_cmd_blk[1] = STLINK_DEBUG_STEPCORE;
     sl->q_len = 2;
@@ -748,7 +748,7 @@ int _stlink_sg_step(stlink_t *sl) {
 // TODO make delegate!
 void stlink_set_hw_bp(stlink_t *sl, int fp_nr, uint32_t addr, int fp) {
     DLOG("\n*** stlink_set_hw_bp ***\n");
-    struct stlink_libsg *sg = sl->backend_data;
+    struct stlink_libsg *sg = static_cast<stlink_libsg *>(sl->backend_data);
     clear_cdb(sg);
     sg->cdb_cmd_blk[1] = STLINK_DEBUG_SETFP;
     // 2:The number of the flash patch used to set the breakpoint
@@ -767,7 +767,7 @@ void stlink_set_hw_bp(stlink_t *sl, int fp_nr, uint32_t addr, int fp) {
 
 // TODO make delegate!
 void stlink_clr_hw_bp(stlink_t *sl, int fp_nr) {
-    struct stlink_libsg *sg = sl->backend_data;
+    struct stlink_libsg *sg = static_cast<stlink_libsg *>(sl->backend_data);
     DLOG("\n*** stlink_clr_hw_bp ***\n");
     clear_cdb(sg);
     sg->cdb_cmd_blk[1] = STLINK_DEBUG_CLEARFP;
@@ -781,7 +781,7 @@ void stlink_clr_hw_bp(stlink_t *sl, int fp_nr) {
 // Read a "len" bytes to the sl->q_buf from the memory, max 6kB (6144 bytes)
 
 int _stlink_sg_read_mem32(stlink_t *sl, uint32_t addr, uint16_t len) {
-    struct stlink_libsg *sg = sl->backend_data;
+    struct stlink_libsg *sg = static_cast<stlink_libsg *>(sl->backend_data);
     clear_cdb(sg);
     sg->cdb_cmd_blk[1] = STLINK_DEBUG_READMEM_32BIT;
     // 2-5: addr
@@ -806,7 +806,7 @@ int _stlink_sg_read_mem32(stlink_t *sl, uint32_t addr, uint16_t len) {
 // Write a "len" bytes from the sl->q_buf to the memory, max 64 Bytes.
 
 int _stlink_sg_write_mem8(stlink_t *sl, uint32_t addr, uint16_t len) {
-    struct stlink_libsg *sg = sl->backend_data;
+    struct stlink_libsg *sg = static_cast<stlink_libsg *>(sl->backend_data);
     int ret;
 
     clear_cdb(sg);
@@ -835,7 +835,7 @@ int _stlink_sg_write_mem8(stlink_t *sl, uint32_t addr, uint16_t len) {
 // Write a "len" bytes from the sl->q_buf to the memory, max Q_BUF_LEN bytes.
 
 int _stlink_sg_write_mem32(stlink_t *sl, uint32_t addr, uint16_t len) {
-    struct stlink_libsg *sg = sl->backend_data;
+    struct stlink_libsg *sg = static_cast<stlink_libsg *>(sl->backend_data);
     int ret;
 
     clear_cdb(sg);
@@ -864,7 +864,7 @@ int _stlink_sg_write_mem32(stlink_t *sl, uint32_t addr, uint16_t len) {
 // Write one DWORD data to memory
 
 int _stlink_sg_write_debug32(stlink_t *sl, uint32_t addr, uint32_t data) {
-    struct stlink_libsg *sg = sl->backend_data;
+    struct stlink_libsg *sg = static_cast<stlink_libsg *>(sl->backend_data);
     clear_cdb(sg);
     sg->cdb_cmd_blk[1] = STLINK_JTAG_WRITEDEBUG_32BIT;
     // 2-5: addr
@@ -877,7 +877,7 @@ int _stlink_sg_write_debug32(stlink_t *sl, uint32_t addr, uint32_t data) {
 // Read one DWORD data from memory
 
 int _stlink_sg_read_debug32(stlink_t *sl, uint32_t addr, uint32_t *data) {
-    struct stlink_libsg *sg = sl->backend_data;
+    struct stlink_libsg *sg = static_cast<stlink_libsg *>(sl->backend_data);
     clear_cdb(sg);
     sg->cdb_cmd_blk[1] = STLINK_JTAG_READDEBUG_32BIT;
     // 2-5: addr
@@ -895,7 +895,7 @@ int _stlink_sg_read_debug32(stlink_t *sl, uint32_t addr, uint32_t *data) {
 int _stlink_sg_exit_debug_mode(stlink_t *stl)
 {
     if (stl) {
-        struct stlink_libsg* sl = stl->backend_data;
+        struct stlink_libsg* sl = static_cast<stlink_libsg *>(stl->backend_data);
         clear_cdb(sl);
         sl->cdb_cmd_blk[1] = STLINK_DEBUG_EXIT;
         stl->q_len = 0; // >0 -> aboard
@@ -944,9 +944,9 @@ static stlink_backend_t _stlink_sg_backend = {
 
 static stlink_t* stlink_open(const int verbose) {
 
-    stlink_t *sl = malloc(sizeof (stlink_t));
+    stlink_t *sl = static_cast<stlink_t *>(malloc(sizeof (stlink_t)));
     memset(sl, 0, sizeof(stlink_t));
-    struct stlink_libsg *slsg = malloc(sizeof (struct stlink_libsg));
+    struct stlink_libsg *slsg = static_cast<stlink_libsg *>(malloc(sizeof (struct stlink_libsg)));
     if (sl == NULL || slsg == NULL) {
         WLOG("Couldn't malloc stlink and stlink_sg structures out of memory!\n");
         if(sl != NULL)
