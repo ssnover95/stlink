@@ -19,28 +19,31 @@ static void usage(void)
 }
 
 /* Print normal or OpenOCD hla_serial with newline */
-static void stlink_print_serial(stlink_t *sl, bool openocd)
+static void stlink_print_serial(stlink_t * sl, bool openocd)
 {
-    const char *fmt;
+    const char * fmt;
 
-    if (openocd) {
-       printf("\"");
-       fmt = "\\x%02x";
-    } else {
-       fmt = "%02x";
+    if (openocd)
+    {
+        printf("\"");
+        fmt = "\\x%02x";
+    }
+    else
+    {
+        fmt = "%02x";
     }
 
     for (int n = 0; n < sl->serial_size; n++)
         printf(fmt, sl->serial[n]);
 
     if (openocd)
-       printf("\"");
+        printf("\"");
     printf("\n");
 }
 
-static void stlink_print_info(stlink_t *sl)
+static void stlink_print_info(stlink_t * sl)
 {
-    const struct stlink_chipid_params *params = NULL;
+    const struct stlink_chipid_params * params = nullptr;
 
     if (!sl)
         return;
@@ -50,20 +53,20 @@ static void stlink_print_info(stlink_t *sl)
     printf("openocd: ");
     stlink_print_serial(sl, true);
 
-    printf("  flash: %u (pagesize: %u)\n",
-	   (unsigned int)sl->flash_size, (unsigned int)sl->flash_pgsz);
+    printf("  flash: %u (pagesize: %u)\n", (unsigned int)sl->flash_size,
+           (unsigned int)sl->flash_pgsz);
 
-    printf("   sram: %u\n",       (unsigned int)sl->sram_size);
-    printf(" chipid: 0x%.4x\n",    sl->chip_id);
+    printf("   sram: %u\n", (unsigned int)sl->sram_size);
+    printf(" chipid: 0x%.4x\n", sl->chip_id);
 
-	params = stlink_chipid_get_params(sl->chip_id);
-	if (params)
-		printf("  descr: %s\n", params->description);
+    params = stlink_chipid_get_params(sl->chip_id);
+    if (params)
+        printf("  descr: %s\n", params->description);
 }
 
 static void stlink_probe(void)
 {
-    stlink_t **stdevs;
+    stlink_t ** stdevs;
     size_t size;
 
     size = stlink_probe_usb(&stdevs);
@@ -76,32 +79,36 @@ static void stlink_probe(void)
     stlink_probe_usb_free(&stdevs, size);
 }
 
-static stlink_t *stlink_open_first(void)
+static stlink_t * stlink_open_first(void)
 {
-    stlink_t* sl = NULL;
+    stlink_t * sl = nullptr;
     sl = stlink_v1_open(0, 1);
-    if (sl == NULL)
-        sl = stlink_open_usb(static_cast<ugly_loglevel>(0), 1, NULL);
+    if (sl == nullptr)
+        sl = stlink_open_usb(static_cast<ugly_loglevel>(0), 1, nullptr);
 
     return sl;
 }
 
-static int print_data(char **av)
+static int print_data(char ** av)
 {
-    stlink_t* sl = NULL;
+    stlink_t * sl = nullptr;
 
     // Probe needs all devices unclaimed
-    if (strcmp(av[1], "--probe") == 0) {
+    if (strcmp(av[1], "--probe") == 0)
+    {
         stlink_probe();
         return 0;
-    } else if (strcmp(av[1], "--version") == 0) {
+    }
+    else if (strcmp(av[1], "--version") == 0)
+    {
         printf("v%s\n", STLINK_VERSION);
         return 0;
     }
 
     sl = stlink_open_first();
 
-    if (sl == NULL) {
+    if (sl == nullptr)
+    {
         return -1;
     }
 
@@ -125,9 +132,10 @@ static int print_data(char **av)
         stlink_print_serial(sl, false);
     else if (strcmp(av[1], "--hla-serial") == 0)
         stlink_print_serial(sl, true);
-    else if (strcmp(av[1], "--descr") == 0) {
-        const struct stlink_chipid_params *params = stlink_chipid_get_params(sl->chip_id);
-        if (params == NULL)
+    else if (strcmp(av[1], "--descr") == 0)
+    {
+        const struct stlink_chipid_params * params = stlink_chipid_get_params(sl->chip_id);
+        if (params == nullptr)
             return -1;
         printf("%s\n", params->description);
     }
@@ -141,10 +149,11 @@ static int print_data(char **av)
     return 0;
 }
 
-int main(int ac, char** av)
+int main(int ac, char ** av)
 {
     int err = -1;
-    if (ac < 2) {
+    if (ac < 2)
+    {
         usage();
         return -1;
     }

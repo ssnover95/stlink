@@ -1,19 +1,20 @@
-/* 
+/*
  * File:   test_main.c
- * 
+ *
  * main() ripped out of old stlink-hw.c
  */
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <stlink.h>
+#include <string.h>
 
 #if defined(_MSC_VER)
 #define __attribute__(x)
 #endif
 
-static void __attribute__((unused)) mark_buf(stlink_t *sl) {
+static void __attribute__((unused)) mark_buf(stlink_t * sl)
+{
     memset(sl->q_buf, 0, sizeof(sl->q_buf));
     sl->q_buf[0] = 0xaa;
     sl->q_buf[1] = 0xbb;
@@ -24,27 +25,26 @@ static void __attribute__((unused)) mark_buf(stlink_t *sl) {
     sl->q_buf[16] = 0x33;
     sl->q_buf[63] = 0x44;
     sl->q_buf[64] = 0x69;
-    sl->q_buf[1024 * 6 - 1] = 0x42; //6kB
-    sl->q_buf[1024 * 8 - 1] = 0x42; //8kB
+    sl->q_buf[1024 * 6 - 1] = 0x42; // 6kB
+    sl->q_buf[1024 * 8 - 1] = 0x42; // 8kB
 }
-
 
 int main(void)
 {
     /* Avoid unused parameter warning */
     // set scpi lib debug level: 0 for no debug info, 10 for lots
 
-        fputs(
-                "\nUsage: stlink-access-test [anything at all] ...\n"
-                "\n*** Notice: The stlink firmware violates the USB standard.\n"
-                "*** Because we just use libusb, we can just tell the kernel's\n"
-                "*** driver to simply ignore the device...\n"
-                "*** Unplug the stlink and execute once as root:\n"
-                "modprobe -r usb-storage && modprobe usb-storage quirks=483:3744:i\n\n",
-                stderr);
+    fputs(
+        "\nUsage: stlink-access-test [anything at all] ...\n"
+        "\n*** Notice: The stlink firmware violates the USB standard.\n"
+        "*** Because we just use libusb, we can just tell the kernel's\n"
+        "*** driver to simply ignore the device...\n"
+        "*** Unplug the stlink and execute once as root:\n"
+        "modprobe -r usb-storage && modprobe usb-storage quirks=483:3744:i\n\n",
+        stderr);
 
-    stlink_t *sl = stlink_v1_open(99, 1);
-    if (sl == NULL)
+    stlink_t * sl = stlink_v1_open(99, 1);
+    if (sl == nullptr)
         return 0;
 
     // we are in mass mode, go to swd
@@ -54,15 +54,17 @@ int main(void)
     //----------------------------------------------------------------------
 
     stlink_status(sl);
-    //stlink_force_debug(sl);
+    // stlink_force_debug(sl);
     stlink_reset(sl);
     stlink_status(sl);
     // core system control block
     stlink_read_mem32(sl, 0xe000ed00, 4);
-    DLOG("cpu id base register: SCB_CPUID = got 0x%08x expect 0x411fc231\n", read_uint32(sl->q_buf, 0));
+    DLOG("cpu id base register: SCB_CPUID = got 0x%08x expect 0x411fc231\n",
+         read_uint32(sl->q_buf, 0));
     // no MPU
     stlink_read_mem32(sl, 0xe000ed90, 4);
-    DLOG("mpu type register: MPU_TYPER = got 0x%08x expect 0x0\n", read_uint32(sl->q_buf, 0));
+    DLOG("mpu type register: MPU_TYPER = got 0x%08x expect 0x0\n",
+         read_uint32(sl->q_buf, 0));
 
 #if 0
     stlink_read_mem32(sl, 0xe000edf0, 4);
@@ -75,11 +77,11 @@ int main(void)
     // happy new year 2011: let blink all the leds
     // see "RM0041 Reference manual - STM32F100xx advanced ARM-based 32-bit MCUs"
 
-#define GPIOC		0x40011000 // port C
-#define GPIOC_CRH	(GPIOC + 0x04) // port configuration register high
-#define GPIOC_ODR	(GPIOC + 0x0c) // port output data register
-#define LED_BLUE	(1<<8) // pin 8
-#define LED_GREEN	(1<<9) // pin 9
+#define GPIOC 0x40011000         // port C
+#define GPIOC_CRH (GPIOC + 0x04) // port configuration register high
+#define GPIOC_ODR (GPIOC + 0x0c) // port output data register
+#define LED_BLUE (1 << 8)        // pin 8
+#define LED_GREEN (1 << 9)       // pin 9
     stlink_read_mem32(sl, GPIOC_CRH, 4);
     uint32_t io_conf = read_uint32(sl->q_buf, 0);
     DLOG("GPIOC_CRH = 0x%08x\n", io_conf);
@@ -205,6 +207,6 @@ int main(void)
     stlink_close(sl);
 #endif
 
-    //fflush(stderr); fflush(stdout);
+    // fflush(stderr); fflush(stdout);
     return EXIT_SUCCESS;
 }
